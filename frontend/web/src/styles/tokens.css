@@ -1,0 +1,29 @@
+:root {
+  --bg: #0d0a08;
+  --bg-1: #14100d;
+  --surface: #191410;
+  --surface-2: #201a14;
+  --border: rgba(255, 246, 230, 0.09);
+  --border-strong: rgba(255, 246, 230, 0.22);
+  --text: #f4efe4;
+  --muted: #9d9384;
+  --muted-dim: #675f50;
+
+  --gold: #bd9752;       /* aged brass, not digital gold */
+  --gold-bright: #d4b06a;
+  --gold-dim: #7d683c;
+  --indigo: #6d6ad4;     /* second accent — used sparingly, links/focus/detail */
+  --rust: #c1573f;       /* Codeforces data series */
+  --amber: #d3a63e;      /* LeetCode data series */
+  --slate: #5c7a8c;
+  --sage: #7c9a72;        /* positive delta */
+  --brick: #b75b4c;       /* negative delta */
+
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+  --sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --serif: 'Fraunces', 'Newsreader', Georgia, serif;
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 20px;
+}

@@ -1,7 +1,6 @@
 // SyncRank data model.
 // UUIDs everywhere, timestamps with timezone, indexes on the columns the
 // leaderboard/admin/contest queries actually filter or sort by.
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -44,6 +43,9 @@ enum Verdict {
   wrong_answer
   time_limit
   runtime_error
+  compile_error
+  internal_error
+  pending
 }
 
 enum SyncJobStatus {
@@ -57,40 +59,55 @@ model Campus {
   id        String   @id @default(uuid())
   name      String   @unique
   city      String?
+  tournamentsAsA Tournament[] @relation("TournamentCampusA")
+  tournamentsAsB Tournament[] @relation("TournamentCampusB")
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
-
   users    User[]
   contests Contest[]
-
   @@map("campuses")
 }
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String
-  name         String
-  role         Role     @default(student)
-  branch       String?
-  gradYear     Int?
-  campusId     String
-  createdAt    DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt    DateTime @updatedAt @db.Timestamptz(6)
-
-  campus Campus @relation(fields: [campusId], references: [id], onDelete: Restrict)
-
-  handleLink        HandleLink?
-  ratingSnapshots    RatingSnapshot[]
-  contestsCreated    Contest[]              @relation("ContestCreatedBy")
-  registrations      ContestRegistration[]
-  submissions        Submission[]
-  syncJobLogs        SyncJobLog[]
-
-  // Leaderboard queries filter by campusId and sort by current syncScore
-  // (denormalized onto the latest RatingSnapshot, read via a join/subquery).
+  id               String    @id @default(uuid())
+  email            String    @unique
+  passwordHash     String? // null for Google-only accounts
+  googleId         String?   @unique
+  name             String
+  role             Role      @default(student)
+  branch           String?
+  gradYear         Int?
+  campusId         String
+  currentSyncScore Int       @default(0)
+  tokenVersion     Int       @default(0)
+  emailVerifiedAt  DateTime? @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @db.Timestamptz(6)
+  passwordResetTokens     PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  contestInvites          ContestInvite[]
+  visibleToRecruiters Boolean  @default(false)
+  isMentor             Boolean  @default(false)
+  mentorTags           String[] @default([])
+  
+  apiKeys             ApiKey[]
+  webhooks            Webhook[]
+  connectionsSent     ConnectionRequest[] @relation("ConnectionRequester")
+  connectionsReceived ConnectionRequest[] @relation("ConnectionTarget")
+  teamsCreated        Team[]              @relation("TeamCreatedBy")
+  teamMemberships     TeamMember[]
+  campus          Campus                @relation(fields: [campusId], references: [id], onDelete: Restrict)
+  handleLink      HandleLink?
+  ratingSnapshots RatingSnapshot[]
+  contestsCreated Contest[]             @relation("ContestCreatedBy")
+  registrations   ContestRegistration[]
+  submissions     Submission[]
+  syncJobLogs     SyncJobLog[]
+  // Leaderboard: filter by campus + sort by denormalized score in Postgres
   @@index([campusId])
   @@index([campusId, role])
+  @@index([campusId, currentSyncScore])
+  @@index([currentSyncScore])
   @@map("users")
 }
 
@@ -104,31 +121,24 @@ model HandleLink {
   isStale      Boolean   @default(true)
   createdAt    DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
-
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@index([lastSyncedAt])
   @@map("handle_links")
 }
 
 model RatingSnapshot {
-  id                String   @id @default(uuid())
-  userId            String
-  cfRating          Int?
-  lcSolvedTotal      Int?
-  lcSolvedLast30d    Int?
-  lcSolvedLast90d    Int?
-  syncScore         Int
-  syncScoreVersion  Int
-  campusRank        Int?
-  globalRank        Int?
-  createdAt         DateTime @default(now()) @db.Timestamptz(6)
-
+  id               String   @id @default(uuid())
+  userId           String
+  cfRating         Int?
+  lcSolvedTotal    Int?
+  lcSolvedLast30d  Int?
+  lcSolvedLast90d  Int?
+  syncScore        Int
+  syncScoreVersion Int
+  campusRank       Int?
+  globalRank       Int?
+  createdAt        DateTime @default(now()) @db.Timestamptz(6)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Leaderboard reads: latest snapshot per user, ordered by syncScore desc,
-  // scoped to campus via the user relation. This composite index backs
-  // "give me this user's most recent snapshot" and score-sorted scans.
   @@index([userId, createdAt])
   @@index([syncScore])
   @@map("rating_snapshots")
@@ -148,83 +158,269 @@ model Contest {
   participantsMode String            @default("all") // "all" | "invite"
   createdAt        DateTime          @default(now()) @db.Timestamptz(6)
   updatedAt        DateTime          @updatedAt @db.Timestamptz(6)
-
-  campus      Campus                @relation(fields: [campusId], references: [id], onDelete: Cascade)
-  createdBy   User                  @relation("ContestCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-  problems    ContestProblem[]
+  campus        Campus                @relation(fields: [campusId], references: [id], onDelete: Cascade)
+  createdBy     User                  @relation("ContestCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  problems      ContestProblem[]
   registrations ContestRegistration[]
-  submissions Submission[]
-
+  submissions   Submission[]
+  invites       ContestInvite[]
+  teams         Team[]   
   @@index([campusId, status])
   @@index([status, startAt])
   @@map("contests")
 }
 
 model ContestProblem {
-  id         String     @id @default(uuid())
-  contestId  String
-  code       String
-  title      String
-  difficulty Difficulty
-  points     Int
-  order      Int
-
-  contest     Contest      @relation(fields: [contestId], references: [id], onDelete: Cascade)
-  submissions Submission[]
-
+  id            String     @id @default(uuid())
+  contestId     String
+  code          String
+  title         String
+  difficulty    Difficulty
+  points        Int
+  order         Int
+  timeLimitMs   Int        @default(2000)
+  memoryLimitKb Int        @default(256000)
+  contest       Contest      @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  submissions   Submission[]
+  testCases     ContestProblemTestCase[]
   @@index([contestId, order])
   @@map("contest_problems")
 }
 
-model ContestRegistration {
-  id         String   @id @default(uuid())
-  contestId  String
-  userId     String
-  registeredAt DateTime @default(now()) @db.Timestamptz(6)
+model ContestProblemTestCase {
+  id          String   @id @default(uuid())
+  problemId   String
+  input       String   @db.Text
+  expectedOut String   @db.Text
+  isSample    Boolean  @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
 
+  problem ContestProblem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@index([problemId, order])
+  @@map("contest_problem_test_cases")
+}
+
+model ContestRegistration {
+  id           String   @id @default(uuid())
+  contestId    String
+  userId       String
+  registeredAt DateTime @default(now()) @db.Timestamptz(6)
   contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@unique([contestId, userId])
   @@index([contestId])
   @@map("contest_registrations")
 }
 
 model Submission {
-  id           String   @id @default(uuid())
-  idempotencyKey String? @unique
-  contestId    String
-  problemId    String
-  userId       String
-  verdict      Verdict
-  penaltyMins  Int      @default(0)
-  submittedAt  DateTime @default(now()) @db.Timestamptz(6)
+  id             String   @id @default(uuid())
+  idempotencyKey String?  @unique
+  contestId      String
+  problemId      String
+  userId         String
+  verdict        Verdict  @default(pending)
+  penaltyMins    Int      @default(0)
+  submittedAt    DateTime @default(now()) @db.Timestamptz(6)
+
+  // Judge0 fields
+  sourceCode     String?  @db.Text
+  languageId     Int?
+  runtimeMs      Int?
+  memoryKb       Int?
+  failedTestCase Int?
+  judgeToken     String?
+  proofUrl       String?
 
   contest Contest        @relation(fields: [contestId], references: [id], onDelete: Cascade)
   problem ContestProblem @relation(fields: [problemId], references: [id], onDelete: Cascade)
   user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Standings computation reads all submissions for a contest, and per-user
-  // history is queried when showing "your submissions".
   @@index([contestId, userId])
   @@index([contestId, submittedAt])
   @@map("submissions")
 }
 
 model SyncJobLog {
-  id          String        @id @default(uuid())
-  userId      String
-  status      SyncJobStatus
-  source      String // "codeforces" | "leetcode"
-  attempt     Int           @default(1)
+  id           String        @id @default(uuid())
+  userId       String
+  status       SyncJobStatus
+  source       String // "codeforces" | "leetcode"
+  attempt      Int           @default(1)
   errorMessage String?
-  rawPayload  Json? // size-capped at the application layer before insert
-  startedAt   DateTime      @default(now()) @db.Timestamptz(6)
-  finishedAt  DateTime?     @db.Timestamptz(6)
-
+  rawPayload   Json?
+  startedAt    DateTime      @default(now()) @db.Timestamptz(6)
+  finishedAt   DateTime?     @db.Timestamptz(6)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@index([userId, startedAt])
   @@index([status])
   @@map("sync_job_logs")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime  @db.Timestamptz(6)
+  usedAt    DateTime? @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime  @db.Timestamptz(6)
+  usedAt    DateTime? @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@map("email_verification_tokens")
+}
+
+model ContestInvite {
+  id        String   @id @default(uuid())
+  contestId String
+  userId    String
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([contestId, userId])
+  @@index([contestId])
+  @@map("contest_invites")
+}
+model ApiKey {
+  id         String    @id @default(uuid())
+  userId     String
+  label      String
+  keyHash    String    @unique
+  keyPreview String
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
+  lastUsedAt DateTime? @db.Timestamptz(6)
+  revokedAt  DateTime? @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("api_keys")
+}
+
+model Webhook {
+  id        String   @id @default(uuid())
+  userId    String
+  url       String
+  events    String[]
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("webhooks")
+}
+
+enum TournamentStatus {
+  upcoming
+  live
+  completed
+}
+
+model Tournament {
+  id          String           @id @default(uuid())
+  name        String
+  campusAId   String
+  campusBId   String
+  windowStart DateTime         @db.Timestamptz(6)
+  windowEnd   DateTime         @db.Timestamptz(6)
+  status      TournamentStatus @default(upcoming)
+  scoreA      Int?
+  scoreB      Int?
+  createdAt   DateTime         @default(now()) @db.Timestamptz(6)
+
+  campusA Campus @relation("TournamentCampusA", fields: [campusAId], references: [id], onDelete: Cascade)
+  campusB Campus @relation("TournamentCampusB", fields: [campusBId], references: [id], onDelete: Cascade)
+
+  @@index([status, windowStart])
+  @@map("tournaments")
+}
+
+enum ConnectionKind {
+  mentorship
+  mock_interview
+}
+
+enum ConnectionStatus {
+  pending
+  accepted
+  declined
+}
+
+model ConnectionRequest {
+  id          String           @id @default(uuid())
+  kind        ConnectionKind
+  requesterId String
+  targetId    String
+  message     String?
+  status      ConnectionStatus @default(pending)
+  createdAt   DateTime         @default(now()) @db.Timestamptz(6)
+  respondedAt DateTime?        @db.Timestamptz(6)
+
+  requester User @relation("ConnectionRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  target    User @relation("ConnectionTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@index([targetId, kind, status])
+  @@index([requesterId])
+  @@map("connection_requests")
+}
+
+model Team {
+  id          String   @id @default(uuid())
+  contestId   String
+  name        String
+  createdById String
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+
+  contest   Contest      @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  createdBy User         @relation("TeamCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  members   TeamMember[]
+
+  @@unique([contestId, name])
+  @@index([contestId])
+  @@map("teams")
+}
+
+enum TeamMemberStatus {
+  invited
+  accepted
+  declined
+}
+
+model TeamMember {
+  id        String           @id @default(uuid())
+  teamId    String
+  userId    String
+  status    TeamMemberStatus @default(invited)
+  invitedAt DateTime         @default(now()) @db.Timestamptz(6)
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([userId])
+  @@map("team_members")
+}
+
+model ContactSubmission {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  company   String?
+  message   String
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("contact_submissions")
 }

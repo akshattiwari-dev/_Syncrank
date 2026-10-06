@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  DATABASE_URL: postgresql://syncrank:syncrank_ci_password@localhost:5432/syncrank
+  REDIS_URL: redis://localhost:6379
+  JWT_SECRET: ci-only-secret-do-not-use-in-real-envs-0123456789
+  WEB_ORIGIN: http://localhost:5173
+  NODE_ENV: test
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: syncrank
+          POSTGRES_PASSWORD: syncrank_ci_password
+          POSTGRES_DB: syncrank
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U syncrank"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+
+      - name: Build shared package
+        run: npm run build -w packages/shared
+
+      - name: Build db package
+        run: npm run build -w packages/db
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests (sync score, standings)
+        run: npm run test
+
+      - name: Run migrations against CI database
+        run: npm run prisma:migrate:deploy
+
+      - name: Build API
+        run: npm run build -w backend/api
+
+      - name: Build worker
+        run: npm run build -w backend/worker
+
+      - name: Build web
+        run: npm run build -w frontend/web
+        env:
+          VITE_API_URL: http://localhost:4000
+
+      - name: Smoke test — API boots and /health responds
+        run: |
+          node backend/api/dist/server.js &
+          API_PID=$!
+          sleep 3
+          curl --fail http://localhost:4000/health
+          curl --fail http://localhost:4000/ready
+          kill $API_PID

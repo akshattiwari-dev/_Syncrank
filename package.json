@@ -3,17 +3,19 @@
   "private": true,
   "version": "1.0.0",
   "workspaces": [
-    "apps/*",
+    "frontend/*", "backend/*",
     "packages/*"
   ],
   "scripts": {
-    "dev:web": "npm run dev -w apps/web",
-    "dev:api": "npm run dev -w apps/api",
-    "dev:worker": "npm run dev -w apps/worker",
-    "build": "npm run build -w packages/shared && npm run prisma:generate && npm run build -w apps/api && npm run build -w apps/worker && npm run build -w apps/web",
-    "typecheck": "npm run typecheck -w packages/shared && npm run typecheck -w apps/api && npm run typecheck -w apps/worker",
-    "test": "npm run test -w packages/shared && npm run test -w apps/api --if-present",
-    "lint": "npm run lint -w apps/api --if-present && npm run lint -w apps/web --if-present",
+    "dev:web": "npm run dev -w frontend/web",
+    "dev:api": "npm run dev -w backend/api",
+    "dev:worker": "npm run dev -w backend/worker",
+    "build": "npm run build -w packages/shared && npm run prisma:generate && npm run build -w backend/api && npm run build -w backend/worker && npm run build -w frontend/web",
+    "typecheck": "npm run typecheck -w packages/shared && npm run typecheck -w backend/api && npm run typecheck -w backend/worker",
+    "test": "npm run test -w packages/shared && npm run test -w backend/api",
+    "lint": "eslint . --max-warnings=50",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "prisma:generate": "npm run prisma:generate -w packages/db",
     "prisma:migrate:dev": "npm run prisma:migrate:dev -w packages/db",
     "prisma:migrate:deploy": "npm run prisma:migrate:deploy -w packages/db",
@@ -21,5 +23,14 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.9.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.11.0",
+    "prettier": "^3.9.6",
+    "typescript-eslint": "^8.68.0"
   }
 }
