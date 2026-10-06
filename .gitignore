@@ -15,3 +15,4 @@ packages/db/node_modules/.prisma/
 .vscode/*
 !.vscode/extensions.json
 .idea/
+syncrank_deep.txt
