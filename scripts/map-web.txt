@@ -1,0 +1,54 @@
+# --- auth ---
+pages/LoginPage.jsx            features/auth/pages/LoginPage.jsx
+pages/RegisterPage.jsx         features/auth/pages/RegisterPage.jsx
+pages/ForgotPasswordPage.jsx   features/auth/pages/ForgotPasswordPage.jsx
+pages/ResetPasswordPage.jsx    features/auth/pages/ResetPasswordPage.jsx
+pages/OnboardPage.jsx          features/auth/pages/OnboardPage.jsx
+pages/__tests__/LoginPage.test.jsx  features/auth/pages/__tests__/LoginPage.test.jsx
+auth/AuthProvider.jsx          features/auth/AuthProvider.jsx
+auth/ProtectedRoute.jsx        features/auth/ProtectedRoute.jsx
+# --- profile ---
+pages/DashboardPage.jsx        features/profile/pages/DashboardPage.jsx
+pages/ProfilePage.jsx          features/profile/pages/ProfilePage.jsx
+pages/SkillCardPage.jsx        features/profile/pages/SkillCardPage.jsx
+pages/ExportPage.jsx           features/profile/pages/ExportPage.jsx
+# --- contests ---
+pages/ContestPage.jsx          features/contests/pages/ContestPage.jsx
+pages/CreateContestPage.jsx    features/contests/pages/CreateContestPage.jsx
+pages/ArenaPage.jsx            features/contests/pages/ArenaPage.jsx
+hooks/useContestLiveStandings.js  features/contests/hooks/useContestLiveStandings.js
+# --- leaderboard / tournaments ---
+pages/LeaderboardPage.jsx      features/leaderboard/pages/LeaderboardPage.jsx
+hooks/useLiveStandings.js      features/leaderboard/hooks/useLiveStandings.js
+pages/TournamentsPage.jsx      features/tournaments/pages/TournamentsPage.jsx
+# --- practice / career ---
+pages/PracticePage.jsx         features/practice/pages/PracticePage.jsx
+pages/MockInterviewsPage.jsx   features/practice/pages/MockInterviewsPage.jsx
+pages/MentorshipPage.jsx       features/practice/pages/MentorshipPage.jsx
+# --- teams / recruiters / developers / admin ---
+pages/TeamsPage.jsx            features/teams/pages/TeamsPage.jsx
+pages/RecruitersPage.jsx       features/recruiters/pages/RecruitersPage.jsx
+pages/SponsoredPage.jsx        features/recruiters/pages/SponsoredPage.jsx
+pages/DevelopersPage.jsx       features/developers/pages/DevelopersPage.jsx
+pages/IntegrationsPage.jsx     features/developers/pages/IntegrationsPage.jsx
+pages/AdminPage.jsx            features/admin/pages/AdminPage.jsx
+# --- marketing / static ---
+pages/HomePage.jsx             features/marketing/pages/HomePage.jsx
+pages/AboutPage.jsx            features/marketing/pages/AboutPage.jsx
+pages/ContactPage.jsx          features/marketing/pages/ContactPage.jsx
+pages/PrivacyPage.jsx          features/marketing/pages/PrivacyPage.jsx
+pages/TermsPage.jsx            features/marketing/pages/TermsPage.jsx
+pages/ScoringPage.jsx          features/marketing/pages/ScoringPage.jsx
+pages/NotFoundPage.jsx         features/marketing/pages/NotFoundPage.jsx
+components/home/               features/marketing/components/home/
+# --- shared ---
+components/charts/             shared/components/charts/
+components/layout/             shared/components/layout/
+components/motion/             shared/components/motion/
+components/shared/Card.jsx     shared/components/Card.jsx
+hooks/useAnimatedCounter.js    shared/hooks/useAnimatedCounter.js
+hooks/useCountdown.js          shared/hooks/useCountdown.js
+hooks/useOutsideClick.js       shared/hooks/useOutsideClick.js
+hooks/useScrollShadow.js       shared/hooks/useScrollShadow.js
+api/client.js                  shared/api/client.js
+data/mockData.js               shared/data/mockData.js

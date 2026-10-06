@@ -1,11 +1,11 @@
 import type { Job } from 'bullmq'
-import { env } from './lib/env.js'
-import { logger } from './lib/logger.js'
-import { syncQueue, contestLifecycleQueue, createSyncWorker, createLifecycleWorker, enqueueContestTransition } from './lib/queues.js'
-import { processSyncJob } from './processors/sync-job.js'
-import { processNightlyScan } from './processors/nightly-scan.js'
-import { processContestLifecycleJob, scanAndEnqueueTransitions } from './processors/contest-lifecycle.js'
-import { scanAndUpdateTournaments } from './processors/tournament-lifecycle.js'
+import { env } from './config/env.js'
+import { logger } from './infrastructure/logging/logger.js'
+import { syncQueue, contestLifecycleQueue, createSyncWorker, createLifecycleWorker, enqueueContestTransition } from './infrastructure/queue/queues.js'
+import { processSyncJob } from './presentation/processors/sync-job.js'
+import { processNightlyScan } from './presentation/processors/nightly-scan.js'
+import { processContestLifecycleJob, scanAndEnqueueTransitions } from './presentation/processors/contest-lifecycle.js'
+import { scanAndUpdateTournaments } from './presentation/processors/tournament-lifecycle.js'
 import type { SyncQueueJobData, ContestLifecycleJobData } from '@syncrank/shared'
 
 async function main() {

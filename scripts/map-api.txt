@@ -1,0 +1,11 @@
+lib/env.ts            config/env.ts
+lib/logger.ts         infrastructure/logging/logger.ts
+lib/redis.ts          infrastructure/cache/redis.ts
+lib/queues.ts         infrastructure/queue/queues.ts
+lib/judge0.ts         infrastructure/judge/judge0.ts
+lib/auth.ts           infrastructure/auth/auth.ts
+lib/apiKeyAuth.ts     infrastructure/auth/apiKeyAuth.ts
+lib/standings.ts      application/services/standings.service.ts
+plugins/              presentation/plugins/
+realtime/             presentation/realtime/
+routes/               presentation/routes/

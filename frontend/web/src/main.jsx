@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App.jsx'
-import { AuthProvider } from './auth/AuthProvider.jsx'
+import { AuthProvider } from './features/auth/AuthProvider.jsx'
 import './styles/tokens.css'
 import './styles/global.css'
 

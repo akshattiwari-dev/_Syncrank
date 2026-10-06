@@ -10,7 +10,6 @@
     "dev:web": "npm run dev -w frontend/web",
     "dev:api": "npm run dev -w backend/api",
     "dev:worker": "npm run dev -w backend/worker",
-    "build": "npm run build -w packages/shared && npm run prisma:generate && npm run build -w backend/api && npm run build -w backend/worker && npm run build -w frontend/web",
     "typecheck": "npm run typecheck -w packages/shared && npm run typecheck -w backend/api && npm run typecheck -w backend/worker",
     "test": "npm run test -w packages/shared && npm run test -w backend/api",
     "lint": "eslint . --max-warnings=50",
@@ -19,7 +18,9 @@
     "prisma:generate": "npm run prisma:generate -w packages/db",
     "prisma:migrate:dev": "npm run prisma:migrate:dev -w packages/db",
     "prisma:migrate:deploy": "npm run prisma:migrate:deploy -w packages/db",
-    "prisma:seed": "npm run prisma:seed -w packages/db"
+    "prisma:seed": "npm run prisma:seed -w packages/db",
+    "generate": "prisma generate --schema packages/db/prisma/schema.prisma",
+    "build": "npm run generate && npm run build -w @syncrank/db -w @syncrank/shared && npm run build -w @syncrank/api -w @syncrank/worker -w @syncrank/web"
   },
   "engines": {
     "node": ">=20"
