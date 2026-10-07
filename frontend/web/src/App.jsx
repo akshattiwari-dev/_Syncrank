@@ -7,6 +7,7 @@ import { ProtectedRoute } from './features/auth/ProtectedRoute.jsx'
 import HomePage from './features/marketing/pages/HomePage.jsx'
 import LoginPage from './features/auth/pages/LoginPage.jsx'
 import RegisterPage from './features/auth/pages/RegisterPage.jsx'
+import VerifyEmailPage from './features/auth/pages/VerifyEmailPage.jsx'
 import DashboardPage from './features/profile/pages/DashboardPage.jsx'
 import LeaderboardPage from './features/leaderboard/pages/LeaderboardPage.jsx'
 import ArenaPage from './features/contests/pages/ArenaPage.jsx'
@@ -46,6 +47,7 @@ export default function App() {
           <Route path="/" element={<PageTransition><HomePage /></PageTransition>} />
           <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
           <Route path="/register" element={<PageTransition><RegisterPage /></PageTransition>} />
+          <Route path="/verify-email" element={<PageTransition><ProtectedRoute><VerifyEmailPage /></ProtectedRoute></PageTransition>} />
           <Route path="/forgot-password" element={<PageTransition><ForgotPasswordPage /></PageTransition>} />
           <Route path="/reset-password" element={<PageTransition><ResetPasswordPage /></PageTransition>} />
 

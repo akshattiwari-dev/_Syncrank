@@ -424,3 +424,13 @@ model ContactSubmission {
 
   @@map("contact_submissions")
 }
+model EmailOtp {
+  id        String   @id @default(uuid())
+  userId    String
+  codeHash  String
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}

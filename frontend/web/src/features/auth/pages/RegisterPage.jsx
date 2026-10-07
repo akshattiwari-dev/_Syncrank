@@ -33,7 +33,7 @@ export default function RegisterPage() {
     setSubmitting(true)
     try {
       await register(form)
-      navigate('/dashboard', { replace: true })
+      navigate('/verify-email', { replace: true })
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not create an account — try again.')
     } finally {

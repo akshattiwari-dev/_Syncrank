@@ -128,10 +128,13 @@ export default function Navbar() {
           </button>
 
           <div className="nav-div" />
-          <NavLink to="/dashboard" className="nav-cta">
-            Join your campus
-          </NavLink>
+          {!user && (
+            <NavLink to="/login" className="nav-cta">
+              Log in
+            </NavLink>
+          )}
 
+          {user && (
           <div className="avatar-wrap" ref={avatarRef}>
             <button className="avatar-btn" onClick={() => setAvatarOpen((v) => !v)}>
               {user?.name?.[0]?.toUpperCase() || 'U'}
@@ -159,6 +162,7 @@ export default function Navbar() {
               )}
             </AnimatePresence>
           </div>
+          )}
         </div>
       </motion.nav>
 

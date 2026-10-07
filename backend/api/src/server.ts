@@ -28,6 +28,7 @@ import { teamRoutes } from './presentation/routes/teams.js'
 import { webhookRoutes } from './presentation/routes/webhooks.js'
 import { contactRoutes } from './presentation/routes/contact.js'
 import { practiceRoutes } from './presentation/routes/practice.js'
+import { emailOtpRoutes } from './presentation/routes/email-otp.js'
 
 export async function buildServer() {
   const app = Fastify({
@@ -91,6 +92,7 @@ export async function buildServer() {
   await app.register(webhookRoutes)
   await app.register(contactRoutes)
   await app.register(practiceRoutes)
+  await app.register(emailOtpRoutes)
 
   // ---- Realtime (Socket.IO mounted on the same HTTP server) ----
   registerRealtime(app)
