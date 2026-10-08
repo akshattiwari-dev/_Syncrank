@@ -48,6 +48,7 @@ export default function App() {
           <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
           <Route path="/register" element={<PageTransition><RegisterPage /></PageTransition>} />
           <Route path="/verify-email" element={<PageTransition><ProtectedRoute><VerifyEmailPage /></ProtectedRoute></PageTransition>} />
+          <Route path="/verify-email" element={<PageTransition><ProtectedRoute><VerifyEmailPage /></ProtectedRoute></PageTransition>} />
           <Route path="/forgot-password" element={<PageTransition><ForgotPasswordPage /></PageTransition>} />
           <Route path="/reset-password" element={<PageTransition><ResetPasswordPage /></PageTransition>} />
 
