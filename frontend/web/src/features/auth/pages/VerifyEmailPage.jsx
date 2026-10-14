@@ -15,24 +15,39 @@ export default function VerifyEmailPage() {
   const [cooldown, setCooldown] = useState(0)
   const sentOnce = useRef(false)
 
+  // Already verified → go to dashboard
+  useEffect(() => {
+    if (user?.emailVerified) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [user, navigate])
+
   async function sendCode() {
     setError(null)
+    setBusy(true)
     try {
       const res = await api.post('/auth/otp/send', {})
-      if (res.alreadyVerified) return navigate('/dashboard', { replace: true })
+      if (res.alreadyVerified) {
+        await refresh()
+        return navigate('/dashboard', { replace: true })
+      }
       setInfo('Code sent. Check your email.')
       setCooldown(60)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not send code')
+    } finally {
+      setBusy(false)
     }
   }
 
+  // Auto-send once on mount
   useEffect(() => {
     if (sentOnce.current) return
     sentOnce.current = true
     sendCode()
   }, [])
 
+  // Cooldown timer
   useEffect(() => {
     if (cooldown <= 0) return
     const t = setTimeout(() => setCooldown((c) => c - 1), 1000)
@@ -41,6 +56,7 @@ export default function VerifyEmailPage() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (code.length !== 6) return
     setError(null)
     setBusy(true)
     try {
@@ -60,8 +76,11 @@ export default function VerifyEmailPage() {
         <Reveal>
           <div className="eyebrow-quiet">verify email</div>
           <h2 className="sec-title">Enter your code</h2>
-          <p className="sec-sub">We sent a 6-digit code to {user?.email || 'your email'}.</p>
+          <p className="sec-sub">
+            We sent a 6-digit code to <strong>{user?.email || 'your email'}</strong>.
+          </p>
         </Reveal>
+
         <Reveal delay={0.05}>
           <Card className="form-card">
             <form onSubmit={handleSubmit}>
@@ -70,23 +89,43 @@ export default function VerifyEmailPage() {
                 <input
                   id="otp"
                   inputMode="numeric"
+                  autoComplete="one-time-code"
                   maxLength={6}
                   pattern="\d{6}"
                   required
                   value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  disabled={busy}
+                  autoFocus
                 />
               </div>
-              {info && <div style={{ marginBottom: 14, color: 'var(--muted)' }}>{info}</div>}
-              {error && <div className="form-error" style={{ marginBottom: 14 }}>{error}</div>}
-              <button type="submit" className="btn-primary" disabled={busy || code.length !== 6}>
+
+              {info && (
+                <div style={{ marginBottom: 14, color: 'var(--muted)' }}>{info}</div>
+              )}
+              {error && (
+                <div className="form-error" style={{ marginBottom: 14 }}>
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={busy || code.length !== 6}
+              >
                 {busy ? 'Verifying…' : 'Verify'}
               </button>
+
               <button
                 type="button"
                 className="btn-primary"
-                style={{ marginLeft: 10, background: 'transparent', border: '1px solid var(--muted)' }}
-                disabled={cooldown > 0}
+                style={{
+                  marginLeft: 10,
+                  background: 'transparent',
+                  border: '1px solid var(--muted)',
+                }}
+                disabled={cooldown > 0 || busy}
                 onClick={sendCode}
               >
                 {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
