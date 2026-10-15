@@ -193,7 +193,9 @@ describe('auth → handles → dashboard → leaderboard → submit guard', () =
       headers: { cookie: cookieHeader },
       payload: {
         problemId: problemFromB.id,
-        verdict: 'accepted',
+        sourceCode: 'print(1)',
+        languageId: 71, // Python 3
+        // },
       },
     })
 
