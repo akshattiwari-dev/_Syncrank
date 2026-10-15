@@ -65,12 +65,12 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Unit tests (sync score, standings)
-        run: npm run test
-
       - name: Run migrations against CI database
         run: npm run prisma:migrate:deploy
 
+      - name: Unit tests (sync score, standings)
+        run: npm run test
+      
       - name: Build API
         run: npm run build -w backend/api
 
