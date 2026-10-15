@@ -1,0 +1,7 @@
+cat > .prettierignore << 'EOF'
+node_modules
+dist
+coverage
+package-lock.json
+*.md
+EOF

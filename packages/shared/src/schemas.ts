@@ -27,11 +27,26 @@ export const LoginInput = z.object({
 })
 export type LoginInput = z.infer<typeof LoginInput>
 
-// ---------- Handles ----------
-export const LinkHandlesInput = z.object({
-  cfHandle: z.string().min(1).max(40).optional(),
-  lcUsername: z.string().min(1).max(40).optional(),
+export const RequestPasswordResetInput = z.object({
+  email: z.string().email(),
 })
+export type RequestPasswordResetInput = z.infer<typeof RequestPasswordResetInput>
+
+export const ResetPasswordInput = z.object({
+  token: z.string().min(1),
+  newPassword: z.string().min(8).max(128),
+})
+export type ResetPasswordInput = z.infer<typeof ResetPasswordInput>
+
+// ---------- Handles ----------
+export const LinkHandlesInput = z
+  .object({
+    cfHandle: z.string().min(1).max(40).optional(),
+    lcUsername: z.string().min(1).max(40).optional(),
+  })
+  .refine((v) => v.cfHandle || v.lcUsername, {
+    message: 'Link at least one handle',
+  })
 export type LinkHandlesInput = z.infer<typeof LinkHandlesInput>
 
 // ---------- Contests ----------
@@ -59,11 +74,18 @@ export type CreateContestInput = z.infer<typeof CreateContestInput>
 export const UpdateContestInput = CreateContestInput.partial()
 export type UpdateContestInput = z.infer<typeof UpdateContestInput>
 
+// Real Judge0 submission (source code + language)
 export const SubmitInput = z.object({
   problemId: z.string().uuid(),
-  verdict: z.enum(['accepted', 'wrong_answer', 'time_limit', 'runtime_error']),
+  sourceCode: z.string().min(1).max(100_000),
+  languageId: z.number().int().positive(), // Judge0 language id (e.g. 71 = Python 3.8, 54 = C++17)
 })
 export type SubmitInput = z.infer<typeof SubmitInput>
+
+export const InviteUsersInput = z.object({
+  userIds: z.array(z.string().uuid()).min(1).max(100),
+})
+export type InviteUsersInput = z.infer<typeof InviteUsersInput>
 
 // ---------- Pagination ----------
 export const PaginationQuery = z.object({
@@ -85,3 +107,64 @@ export const ApiError = z.object({
   details: z.unknown().optional(),
 })
 export type ApiError = z.infer<typeof ApiError>
+// ---------- Recruiters ----------
+export const RecruiterQuery = PaginationQuery.extend({
+  minScore: z.coerce.number().int().min(0).default(0),
+})
+export type RecruiterQuery = z.infer<typeof RecruiterQuery>
+
+// ---------- Developer API keys ----------
+export const ApiKeyLabelInput = z.object({ label: z.string().min(1).max(60) })
+export type ApiKeyLabelInput = z.infer<typeof ApiKeyLabelInput>
+
+// ---------- Webhooks ----------
+export const WebhookInput = z.object({
+  url: z.string().url(),
+  events: z.array(z.enum(['rank_change', 'contest_status'])).min(1),
+})
+export type WebhookInput = z.infer<typeof WebhookInput>
+
+// ---------- Tournaments ----------
+export const CreateTournamentInput = z.object({
+  name: z.string().min(1).max(120),
+  campusAId: z.string().uuid(),
+  campusBId: z.string().uuid(),
+  windowStart: z.string().datetime(),
+  windowEnd: z.string().datetime(),
+})
+export type CreateTournamentInput = z.infer<typeof CreateTournamentInput>
+
+// ---------- Mentorship / mock interviews ----------
+export const ConnectionRequestInput = z.object({
+  targetId: z.string().uuid(),
+  kind: z.enum(['mentorship', 'mock_interview']),
+  message: z.string().max(500).optional(),
+})
+export type ConnectionRequestInput = z.infer<typeof ConnectionRequestInput>
+
+export const ConnectionRespondInput = z.object({
+  status: z.enum(['accepted', 'declined']),
+})
+export type ConnectionRespondInput = z.infer<typeof ConnectionRespondInput>
+
+// ---------- Teams ----------
+export const CreateTeamInput = z.object({
+  contestId: z.string().uuid(),
+  name: z.string().min(1).max(60),
+})
+export type CreateTeamInput = z.infer<typeof CreateTeamInput>
+
+export const TeamInviteInput = z.object({ userId: z.string().uuid() })
+export type TeamInviteInput = z.infer<typeof TeamInviteInput>
+
+export const TeamInviteRespondInput = z.object({ status: z.enum(['accepted', 'declined']) })
+export type TeamInviteRespondInput = z.infer<typeof TeamInviteRespondInput>
+
+// ---------- Contact ----------
+export const ContactInput = z.object({
+  name: z.string().min(1).max(100),
+  email: z.string().email(),
+  company: z.string().max(100).optional(),
+  message: z.string().min(1).max(2000),
+})
+export type ContactInput = z.infer<typeof ContactInput>

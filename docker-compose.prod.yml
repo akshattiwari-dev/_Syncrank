@@ -12,7 +12,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: apps/api/Dockerfile
+      dockerfile: backend/api/Dockerfile
     restart: always
     env_file: .env
     ports:
@@ -30,7 +30,7 @@ services:
   worker:
     build:
       context: .
-      dockerfile: apps/worker/Dockerfile
+      dockerfile: backend/worker/Dockerfile
     restart: always
     env_file: .env
     deploy:
@@ -41,7 +41,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
+      dockerfile: frontend/web/Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL}
     restart: always

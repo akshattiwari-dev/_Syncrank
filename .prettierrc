@@ -1,0 +1,8 @@
+cat > .prettierrc << 'EOF'
+{
+  "semi": false,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "printWidth": 100
+}
+EOF
